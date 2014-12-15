@@ -43,7 +43,7 @@ JSON objects + urls of interest
   ```javascript
     url = "https://api.uber.com/v1/estimates/price";
 
-    uber_parameters = { "server_token": "cF68ys0b2s7wBN_hBCftOdTe6SlkQs6jqggth0Z7", "start_latitude": "30.26463", "start_longitude": "-97.74403", "end_latitude": "30.31944", "end_longitude": "-97.71897"};
+    uber_parameters = { "server_token": "SOMESERVERTOKEN", "start_latitude": "30.26463", "start_longitude": "-97.74403", "end_latitude": "30.31944", "end_longitude": "-97.71897"};
 
     textmewhen_api_parameters = {"start_lat":"30.26463","start_lon":"-97.74403","end_lat":"30.31944","end_lon":"-97.71897","end_time":"2014-12-14T18:37:55.347Z","email":"someguy@gmail.com","price":"15.00"}
   ```
