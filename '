@@ -1,0 +1,54 @@
+var MongoClient = require("mongodb").MongoClient
+var logging = require('node-logging');
+var config = require("./config");
+
+var defaultCrudCallback = function (err, result) {
+    if (err != null) {
+      logging.err(err);
+    }
+    else {
+      callback(result)
+    }
+}
+
+var createPostRequest = function (db, data, callback) {
+  var pr = db.collection( config.collectionName );
+  pr.insert(data, defaultCrudCallback);
+};
+
+var updatePostRequest = function (db, data, callback) {
+  var pr = db.collection( config.collectionName );
+  pr.update(data.criteria, data.action, defaultCrudCallback);
+};
+
+var processCallbackString = function (cbs, data, db) {
+  switch (cbs) {
+    case "create":
+      createPostRequest(db, data, function (res) {
+        createWorker(res.ops);
+        db.close();
+      } );
+      break;
+    case "update":
+      updatePostRequest(db, data, function (res) {
+        db.close();
+      } );
+      break;
+    default:
+      logging.err("clientWrapper was passed a callbackString that doesn't exist");
+      db.close();
+  }
+};
+
+var dbWrapper = function (callbackString, data) {
+  MongoClient.connect(config.databaseUrl, function (err, db) {
+    if (err === null) {
+      logging.err(err);
+    }
+    else {
+      processCallbackString( callbackString, data, db);
+    }
+  });
+};
+
+module.exports = dbWrapper;

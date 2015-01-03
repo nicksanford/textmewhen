@@ -1,6 +1,7 @@
 var logging = require('node-logging');
 var config = require("./config");
 var nodemailer = require('nodemailer');
+// mongo
 
 var transporter = nodemailer.createTransport({
     service: config.emailService,
@@ -23,9 +24,11 @@ var setUpMailOptions = function (email, message) {
 var mailCallback = function (error, info) {
           if(error){
               logging.err("mailCallback error: ", error);
+              // update mongo that there was an error sending the message
           }
           else{
               logging.inf('Message sent: ' + info.response);
+              // update mongo that the message was sent
           }
 };
 

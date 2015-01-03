@@ -2,12 +2,47 @@ var config = require("./config");
 var logging = require('node-logging');
 var request = require("request");
 var sendMessage = require("./message_interfaces");
+var dbWrapper = require("./models");
+var async = require("async");
 
-var spawnAsync = function (apiObj) {
+/*var JaySchema = require('jayschema');*/
+/*var js = new JaySchema();*/
+
+var isJsonString = function (str) {
+  try {
+    var parsedJson = JSON.parse(str);
+    if (parsedJson && typeof parsedJson === "object" && parsedJson !== null) {
+      return parsedJson;
+    }
+  } catch (e) {
+    return false;
+  }
+  return false;
+}
+
+var createWorkerData = function (jsonReq) {
+  var workerData =  {
+        url: "https://api.uber.com/v1/estimates/price",
+        parameters: {
+          server_token: config.uberServerToken,
+          start_latitude: jsonReq.start_lat,
+          start_longitude: jsonReq.start_lon,
+          end_latitude: jsonReq.end_lat,
+          end_longitude: jsonReq.end_lon
+          },
+        end_time: jsonReq.end_time,
+        email: jsonReq.email,
+        desired_price: jsonReq.desired_price
+        };
+  return workerData;
+}
+
+var spawnAsync = function (apiObj, asyncCallback) {
   request({url:apiObj.url, qs:apiObj.parameters}, function (err, response, body) {
     var uberResponseBody = body ? JSON.parse(body) : {};
     if (err) {
       logging.err(JSON.stringify({request_error: {error: err, api_obj: apiObj}}));
+      // update mongo that the job failed due to a request_error with the timestamp
     }
     /* This is needed if too many requests are made and the uber api blacklists us
        for a time. In that case there will be an uberResponseBody, but it will 
@@ -20,25 +55,29 @@ var spawnAsync = function (apiObj) {
 
         var msg = ( "Price Now: " + uberResponse.low_estimate + " Price desired: " + apiObj.desired_price + "\n" + uberMapLink(apiObj.parameters) );
         logging.inf(JSON.stringify({ worker_done: {msg: msg, api_obj: apiObj}}));
+        // update mongo that the req has been sadisfied with the timestamp
         sendMessage(apiObj.email, msg);
+        asyncCallback( null, "done" );
 
       }
       else if ( (Number( uberResponse.low_estimate ) > Number( apiObj.desired_price ) ) && jobStillHasTime(apiObj.end_time) ) {
         /* try again*/
         logging.inf( JSON.stringify( { call_worker_again: {api_obj: apiObj} }) );
         setTimeout( function () {
-          spawnAsync( apiObj );
+          spawnAsync( apiObj, asyncCallback );
         }, config.secsBetweenAsyncSpawns );
-
       }
       else {
         /* out of time */
+        // update mongo that the req has failed due to timeout with the timestamp
         var msg = ( "Time is up for your request. Current price is: " + uberResponse.low_estimate + " Price desired: " + apiObj.desired_price + "Time: " + Date.now() + "End time: " + apiObj.end_time + "\nHere is your link anyways: " + uberMapLink(apiObj.parameters)  );
         logging.inf( JSON.stringify({ out_of_time: {msg: msg, api_obj: apiObj}}) );
         sendMessage(apiObj.email, msg);
+        asyncCallback( "timeout done" );
       }
     }
     else {
+        // update mongo that the req has failed due to a load errror with the timestamp
         var msg = ( "Our service is under heavy load. Like your mom heavy.  Sorry for the inconvenience. Please try again later." );
         logging.err(JSON.stringify({ load_error: {msg: msg, uber_response: uberResponseBody, api_obj: apiObj }}));
         sendMessage(apiObj.email, msg);
@@ -56,21 +95,42 @@ var jobStillHasTime = function (endtime) {
 }
 // END helpers
 
+var createRecordSpawnAsync = function ( workerData ) {
+  var createWorkerRecord = function (createWorkerCallback) {
+    dbWrapper( "create", workerData, createWorkerCallback);
+  }
+  async.waterfall([createWorkerRecord, spawnAsync], function ( err, result) {
+    if (err) {
+      logging.err(JSON.stringify({create_record_spawn_async_error: {error: err}}))
+    }
+    else {
+      console.log("Holy shit a worker completed!!!");
+    }
+  });
+}
+
+var requestValid = function ( request ) {
+  /* You will add the actual validator below */
+  var json = isJsonString(request);
+  if (json) {
+    return json;
+  }
+  else {
+    return false;
+  }
+}
+
 /* Later there could be many different types of createWorker functions */
-var createWorker = function ( jsonReq ) {
-  var workerData =  {
-          url: "https://api.uber.com/v1/estimates/price",
-          parameters: {
-            server_token: config.uberServerToken,
-            start_latitude: jsonReq.start_lat,
-            start_longitude: jsonReq.start_lon,
-            end_latitude: jsonReq.end_lat,
-            end_longitude: jsonReq.end_lon
-            },
-          end_time: jsonReq.end_time,
-          email: jsonReq.email,
-          desired_price: jsonReq.desired_price
-          };
-  spawnAsync( workerData );
+var createWorker = function ( rawReq ) {
+//  This should wait for the db to respond before going on
+  var validJson = requestValid(rawReq);
+  if ( validJson ){
+    var workerData = createWorkerData( validJson );
+    createRecordSpawnAsync( workerData );
+  }
+  else {
+    logging.err(JSON.stringify({param_error: {error: "The api was fed bad params.", raw_req: rawReq}}));
+  }
 };
+
 module.exports = createWorker;
