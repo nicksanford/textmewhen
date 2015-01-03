@@ -1,4 +1,4 @@
-var logging = require('node-logging');
+﻿var logging = require('node-logging');
 var config = require("./config");
 var nodemailer = require('nodemailer');
 
@@ -28,6 +28,8 @@ var mailCallback = function (error, info) {
               logging.inf('Message sent: ' + info.response);
           }
 };
+
+var ETHEL_ADDED;
 
 var sendMessage = function ( contactInfo, message ) {
         var mailOptions = setUpMailOptions( contactInfo , message );
