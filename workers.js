@@ -4,6 +4,7 @@ var request = require("request");
 var sendMessage = require("./message_interfaces");
 var dbWrapper = require("./models");
 var async = require("async");
+var objectMerge = require('object-merge');
 
 /*var JaySchema = require('jayschema');*/
 /*var js = new JaySchema();*/
@@ -30,6 +31,7 @@ var createWorkerData = function (jsonReq) {
           end_latitude: jsonReq.end_lat,
           end_longitude: jsonReq.end_lon
           },
+        state: "started",
         end_time: jsonReq.end_time,
         email: jsonReq.email,
         desired_price: jsonReq.desired_price
@@ -43,6 +45,8 @@ var spawnAsync = function (apiObj, asyncCallback) {
     if (err) {
       logging.err(JSON.stringify({request_error: {error: err, api_obj: apiObj}}));
       // update mongo that the job failed due to a request_error with the timestamp
+      var newApiObj = objectMerge( apiObj, { state: "request error" } );
+      asyncCallback(null, apiObj);
     }
     /* This is needed if too many requests are made and the uber api blacklists us
        for a time. In that case there will be an uberResponseBody, but it will 
@@ -57,7 +61,8 @@ var spawnAsync = function (apiObj, asyncCallback) {
         logging.inf(JSON.stringify({ worker_done: {msg: msg, api_obj: apiObj}}));
         // update mongo that the req has been sadisfied with the timestamp
         sendMessage(apiObj.email, msg);
-        asyncCallback( null, "done" );
+        var newApiObj = objectMerge( apiObj, { state: "completed" } );
+        asyncCallback( null, newApiObj );
 
       }
       else if ( (Number( uberResponse.low_estimate ) > Number( apiObj.desired_price ) ) && jobStillHasTime(apiObj.end_time) ) {
@@ -73,7 +78,9 @@ var spawnAsync = function (apiObj, asyncCallback) {
         var msg = ( "Time is up for your request. Current price is: " + uberResponse.low_estimate + " Price desired: " + apiObj.desired_price + "Time: " + Date.now() + "End time: " + apiObj.end_time + "\nHere is your link anyways: " + uberMapLink(apiObj.parameters)  );
         logging.inf( JSON.stringify({ out_of_time: {msg: msg, api_obj: apiObj}}) );
         sendMessage(apiObj.email, msg);
-        asyncCallback( "timeout done" );
+
+        var newApiObj = objectMerge( apiObj, { state: "timeout" } );
+        asyncCallback( null, newApiObj );
       }
     }
     else {
@@ -81,6 +88,8 @@ var spawnAsync = function (apiObj, asyncCallback) {
         var msg = ( "Our service is under heavy load. Like your mom heavy.  Sorry for the inconvenience. Please try again later." );
         logging.err(JSON.stringify({ load_error: {msg: msg, uber_response: uberResponseBody, api_obj: apiObj }}));
         sendMessage(apiObj.email, msg);
+        var newApiObj = objectMerge( apiObj, { state: "exceeded uber api limit error" } );
+        asyncCallback( null, newApiObj );
     }
   });
 };
@@ -96,10 +105,16 @@ var jobStillHasTime = function (endtime) {
 // END helpers
 
 var createRecordSpawnAsync = function ( workerData ) {
+  console.log( workerData );
   var createWorkerRecord = function (createWorkerCallback) {
     dbWrapper( "create", workerData, createWorkerCallback);
   }
-  async.waterfall([createWorkerRecord, spawnAsync], function ( err, result) {
+
+  var updateWorkerRecord = function ( data, updateWorkerCallback ) {
+    dbWrapper( "update", data, updateWorkerCallback);
+  }
+
+  async.waterfall([createWorkerRecord, spawnAsync, updateWorkerRecord], function ( err, result) {
     if (err) {
       logging.err(JSON.stringify({create_record_spawn_async_error: {error: err}}))
     }
@@ -120,15 +135,28 @@ var requestValid = function ( request ) {
   }
 }
 
+var endResponse = function (response, code) {
+  if (response) {
+    response.writeHead( code, { "content-type": "application/json" } );
+    response.end();
+    return true;
+  }
+  else {
+    return false;
+  }
+};
+
 /* Later there could be many different types of createWorker functions */
-var createWorker = function ( rawReq ) {
+var createWorker = function ( rawReq, response ) {
 //  This should wait for the db to respond before going on
   var validJson = requestValid(rawReq);
   if ( validJson ){
+    endResponse(response, 200)
     var workerData = createWorkerData( validJson );
     createRecordSpawnAsync( workerData );
   }
   else {
+    endResponse(response, 500)
     logging.err(JSON.stringify({param_error: {error: "The api was fed bad params.", raw_req: rawReq}}));
   }
 };

@@ -11,12 +11,12 @@ var createPostRequest = function (db, data, cb) {
     else {
       cb(null, result);
     }
-});
+  });
 };
 
 var updatePostRequest = function (db, data, cb) {
   var pr = db.collection( config.collectionName );
-  pr.update(data.criteria, data.action, function (err, result) {
+  pr.update( { _id: data._id }, { state: data.state }, function (err, result) {
     if (err) {
       cb(err);
     }
@@ -40,12 +40,12 @@ var processCallbackString = function (cbs, data, db, callback) {
       } );
       break;
     case "update":
-      updatePostRequest(db, data, function (res) {
+      updatePostRequest(db, data, function (err, res) {
         if (err) {
           callback(err);
         }
         else {
-         callback(null, res.ops[0]);
+         callback(null, res);
         }
         db.close();
       } );

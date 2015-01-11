@@ -1,9 +1,15 @@
 var http = require("http");
 var createWorker = require("./workers");
 var config = require("./config");
+var fs = require("fs");
 
 var server = http.createServer( function ( req, res ) {
-      res.writeHead( 200, { "content-type": "application/json" } );
+  if ( req.method === 'GET' ) {
+    res.writeHeader(200, { "Content-Type": "text/html" } );
+    var html = fs.readFileSync('index.html');
+    res.end(html);
+  }
+  else if ( req.method === 'POST') {
 
       data = '';
 
@@ -13,9 +19,13 @@ var server = http.createServer( function ( req, res ) {
 
       req.on("end", function () {
         // create record that request was recieved in mongo
-        createWorker( data );
+        createWorker( data, res );
       });
-      res.end();
+  }
+  else {
+    response.writeHead( 500, { "content-type": "application/json" } );
+    response.end();
+  }
 });
 
 /* grab uncompleted jobs and start their processes 
