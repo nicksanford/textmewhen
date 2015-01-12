@@ -5,46 +5,14 @@ var sendMessage = require("./message_interfaces");
 var dbWrapper = require("./models");
 var async = require("async");
 var objectMerge = require('object-merge');
-
-/*var JaySchema = require('jayschema');*/
-/*var js = new JaySchema();*/
-
-var isJsonString = function (str) {
-  try {
-    var parsedJson = JSON.parse(str);
-    if (parsedJson && typeof parsedJson === "object" && parsedJson !== null) {
-      return parsedJson;
-    }
-  } catch (e) {
-    return false;
-  }
-  return false;
-}
-
-var createWorkerData = function (jsonReq) {
-  var workerData =  {
-        url: "https://api.uber.com/v1/estimates/price",
-        parameters: {
-          server_token: config.uberServerToken,
-          start_latitude: jsonReq.start_lat,
-          start_longitude: jsonReq.start_lon,
-          end_latitude: jsonReq.end_lat,
-          end_longitude: jsonReq.end_lon
-          },
-        state: "started",
-        end_time: jsonReq.end_time,
-        email: jsonReq.email,
-        desired_price: jsonReq.desired_price
-        };
-  return workerData;
-}
+var schema = require("./schema");
+var validation = require("./validations");
 
 var spawnAsync = function (apiObj, asyncCallback) {
   request({url:apiObj.url, qs:apiObj.parameters}, function (err, response, body) {
     var uberResponseBody = body ? JSON.parse(body) : {};
     if (err) {
       logging.err(JSON.stringify({request_error: {error: err, api_obj: apiObj}}));
-      // update mongo that the job failed due to a request_error with the timestamp
       var newApiObj = objectMerge( apiObj, { state: "request_error" } );
       asyncCallback(null, newApiObj );
     }
@@ -65,7 +33,7 @@ var spawnAsync = function (apiObj, asyncCallback) {
 
       }
       else if ( (Number( uberResponse.low_estimate ) > Number( apiObj.desired_price ) ) && jobStillHasTime(apiObj.end_time) ) {
-        /* try again*/
+        /* try again */
         logging.inf( JSON.stringify( { call_worker_again: {api_obj: apiObj} }) );
         setTimeout( function () {
           spawnAsync( apiObj, asyncCallback );
@@ -82,19 +50,15 @@ var spawnAsync = function (apiObj, asyncCallback) {
       }
     }
     else {
-        // update mongo that the req has failed due to a load errror with the timestamp
+        /* failed due to a load error */
         logging.err(JSON.stringify({ load_error: { uber_response: uberResponseBody, api_obj: apiObj }}));
-        /*
-        var msg = ( "Our service is under heavy load. Like your mom heavy.  Sorry for the inconvenience. Please try again later." );
-        sendMessage(apiObj.email, msg);
-        */
         var newApiObj = objectMerge( apiObj, { state: "uber_api_limit_error" } );
         asyncCallback( null, newApiObj );
     }
   });
 };
 
-// START helpers
+/* START helpers */
 var uberMapLink = function (params) {
   return "https://m.uber.com/sign-up?client_id=" + config.uberClientId + "&pickup_latitude=" + params.start_latitude + "&pickup_longitude=" + params.start_longitude + "&dropoff_latitude=" + params.end_latitude + "&dropoff_longitude=" + params.end_longitude
 }
@@ -102,7 +66,53 @@ var uberMapLink = function (params) {
 var jobStillHasTime = function (endtime) {
   return ( (Date.parse(endtime) >= Date.now()) ? true : false );
 }
-// END helpers
+
+var createWorkerData = function (jsonReq) {
+  var workerData =  {
+        url: "https://api.uber.com/v1/estimates/price",
+        parameters: {
+          server_token: config.uberServerToken,
+          start_latitude: jsonReq.start_lat,
+          start_longitude: jsonReq.start_lon,
+          end_latitude: jsonReq.end_lat,
+          end_longitude: jsonReq.end_lon
+          },
+        state: "started",
+        end_time: jsonReq.end_time,
+        email: jsonReq.email,
+        desired_price: jsonReq.desired_price
+        };
+  return workerData;
+}
+
+/* END helpers */
+
+var createWorker = function ( rawReq, response ) {
+  var validJson = validation.isJsonString(rawReq);
+  if ( validJson && validation.passesValidations(schema, validJson) ){
+    endResponse(response, { code: 200 })
+    var workerData = createWorkerData( validJson );
+    createRecordSpawnAsync( workerData );
+  }
+  else {
+    var reqErrors = validJson ? validation.validationErrors(schema, validJson) : "Request must be made with json"
+    endResponse(response, { code: 400, errors: reqErrors })
+    logging.err(JSON.stringify({param_error: {error: reqErrors, raw_req: rawReq}}));
+  }
+};
+
+var endResponse = function (response, data) {
+  if (response) {
+    response.writeHead( data.code, { "content-type": "application/json" } );
+    response.end();
+    return true;
+  }
+  else {
+    response.writeHead( data.code, { "content-type": "application/json" } );
+    response.end();
+    return false;
+  }
+};
 
 var createRecordSpawnAsync = function ( workerData ) {
   console.log( workerData );
@@ -123,42 +133,5 @@ var createRecordSpawnAsync = function ( workerData ) {
     }
   });
 }
-
-var requestValid = function ( request ) {
-  /* You will add the actual validator below */
-  var json = isJsonString(request);
-  if (json) {
-    return json;
-  }
-  else {
-    return false;
-  }
-}
-
-var endResponse = function (response, code) {
-  if (response) {
-    response.writeHead( code, { "content-type": "application/json" } );
-    response.end();
-    return true;
-  }
-  else {
-    return false;
-  }
-};
-
-/* Later there could be many different types of createWorker functions */
-var createWorker = function ( rawReq, response ) {
-//  This should wait for the db to respond before going on
-  var validJson = requestValid(rawReq);
-  if ( validJson ){
-    endResponse(response, 200)
-    var workerData = createWorkerData( validJson );
-    createRecordSpawnAsync( workerData );
-  }
-  else {
-    endResponse(response, 500)
-    logging.err(JSON.stringify({param_error: {error: "The api was fed bad params.", raw_req: rawReq}}));
-  }
-};
 
 module.exports = createWorker;
