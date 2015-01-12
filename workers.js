@@ -45,8 +45,8 @@ var spawnAsync = function (apiObj, asyncCallback) {
     if (err) {
       logging.err(JSON.stringify({request_error: {error: err, api_obj: apiObj}}));
       // update mongo that the job failed due to a request_error with the timestamp
-      var newApiObj = objectMerge( apiObj, { state: "request error" } );
-      asyncCallback(null, apiObj);
+      var newApiObj = objectMerge( apiObj, { state: "request_error" } );
+      asyncCallback(null, newApiObj );
     }
     /* This is needed if too many requests are made and the uber api blacklists us
        for a time. In that case there will be an uberResponseBody, but it will 
@@ -56,12 +56,11 @@ var spawnAsync = function (apiObj, asyncCallback) {
       var uberResponse = uberResponseBody.prices[0];
       if (Number( uberResponse.low_estimate ) <= Number( apiObj.desired_price ) ) {
         /* success */
-
-        var msg = ( "Price Now: " + uberResponse.low_estimate + " Price desired: " + apiObj.desired_price + "\n" + uberMapLink(apiObj.parameters) );
-        logging.inf(JSON.stringify({ worker_done: {msg: msg, api_obj: apiObj}}));
-        // update mongo that the req has been sadisfied with the timestamp
-        sendMessage(apiObj.email, msg);
-        var newApiObj = objectMerge( apiObj, { state: "completed" } );
+        logging.inf(JSON.stringify({ worker_done: { api_obj: apiObj}}));
+        var newApiObj = objectMerge( apiObj, { state: "success", low_estimate: uberResponse.low_estimate, map_link: uberMapLink(apiObj.parameters), msg: function () {
+          return ( "Price Now: " + this.low_estimate + " Price desired: " + this.desired_price + "\n" + this.map_link )
+              }
+        });
         asyncCallback( null, newApiObj );
 
       }
@@ -74,21 +73,22 @@ var spawnAsync = function (apiObj, asyncCallback) {
       }
       else {
         /* out of time */
-        // update mongo that the req has failed due to timeout with the timestamp
-        var msg = ( "Time is up for your request. Current price is: " + uberResponse.low_estimate + " Price desired: " + apiObj.desired_price + "Time: " + Date.now() + "End time: " + apiObj.end_time + "\nHere is your link anyways: " + uberMapLink(apiObj.parameters)  );
-        logging.inf( JSON.stringify({ out_of_time: {msg: msg, api_obj: apiObj}}) );
-        sendMessage(apiObj.email, msg);
-
-        var newApiObj = objectMerge( apiObj, { state: "timeout" } );
+        logging.inf( JSON.stringify({ out_of_time: { api_obj: apiObj}}) );
+        var newApiObj = objectMerge( apiObj, { state: "timeout", low_estimate: uberResponse.low_estimate, map_link: uberMapLink(apiObj.parameters), msg: function () {
+          return ( "Time is up for your request. Current price is: " + this.low_estimate + " Price desired: " + this.desired_price + "\nHere is your link anyways: " + this.map_link )
+              }
+        });
         asyncCallback( null, newApiObj );
       }
     }
     else {
         // update mongo that the req has failed due to a load errror with the timestamp
+        logging.err(JSON.stringify({ load_error: { uber_response: uberResponseBody, api_obj: apiObj }}));
+        /*
         var msg = ( "Our service is under heavy load. Like your mom heavy.  Sorry for the inconvenience. Please try again later." );
-        logging.err(JSON.stringify({ load_error: {msg: msg, uber_response: uberResponseBody, api_obj: apiObj }}));
         sendMessage(apiObj.email, msg);
-        var newApiObj = objectMerge( apiObj, { state: "exceeded uber api limit error" } );
+        */
+        var newApiObj = objectMerge( apiObj, { state: "uber_api_limit_error" } );
         asyncCallback( null, newApiObj );
     }
   });
@@ -114,7 +114,7 @@ var createRecordSpawnAsync = function ( workerData ) {
     dbWrapper( "update", data, updateWorkerCallback);
   }
 
-  async.waterfall([createWorkerRecord, spawnAsync, updateWorkerRecord], function ( err, result) {
+  async.waterfall([createWorkerRecord, spawnAsync, sendMessage, updateWorkerRecord], function ( err, result) {
     if (err) {
       logging.err(JSON.stringify({create_record_spawn_async_error: {error: err}}))
     }

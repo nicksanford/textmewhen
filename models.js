@@ -16,7 +16,7 @@ var createPostRequest = function (db, data, cb) {
 
 var updatePostRequest = function (db, data, cb) {
   var pr = db.collection( config.collectionName );
-  pr.update( { _id: data._id }, { state: data.state }, function (err, result) {
+  pr.update( { _id: data._id }, { $set: { state: data.state, mail_state: data.mail_state, low_price: data.low_price, map_link: data.map_link } }, function (err, result) {
     if (err) {
       cb(err);
     }
