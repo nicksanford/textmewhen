@@ -5,9 +5,15 @@ var fs = require("fs");
 
 var server = http.createServer( function ( req, res ) {
   if ( req.method === 'GET' ) {
-    res.writeHeader(200, { "Content-Type": "text/html" } );
-    var html = fs.readFileSync('index.html');
-    res.end(html);
+    if (req.url === "/js/locationpicker.jquery.js") {
+      res.writeHeader(200, { "Content-Type": "text/javascript" } );
+      var html = fs.readFileSync("js/locationpicker.jquery.js");
+      res.end(html);
+    } else {
+      res.writeHeader(200, { "Content-Type": "text/html" } );
+      var html = fs.readFileSync('index.html');
+      res.end(html);
+    }
   }
   else if ( req.method === 'POST') {
 
