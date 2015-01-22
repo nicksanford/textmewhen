@@ -15,7 +15,7 @@
  <script type="text/template" id="job-template">
 
 
-  <form class="create-job-form" >
+  <form class="create-job-form" method="POST">
   <label class="control-label"for="email">Email</label>
   <input class="form-control"type="text" name="email">
   <label class="control-label"for="price">Price</label>
@@ -96,51 +96,63 @@
         callback({ latitude: 40.782865, longitude: -73.965354 });
     }
   }
-  window.onload = startMapWithGeolocation( function (geolocation) {
-    $("#from_map").locationpicker({
-      location: geolocation
-      ,
-      radius: 20,
-      inputBinding: {
-        locationNameInput: $('[name=start_location]'),
-        latitudeInput: $("[name=start_lat]"),
-        longitudeInput: $("[name=start_lon]")
-      },
-      enableAutocomplete: true,
-      onchanged: function (currentLocation, radius, isMarkerDropped) {
-        $("[name=start_lat]").val(currentLocation.latitude);
-        $("[name=start_lon]").val(currentLocation.longitude);
-      }
+  
+    var Job = Backbone.Model.extend({
+      urlRoot: "/",
+      method: "POST"
     });
-    $("#to_map").locationpicker({
-      location: {
-        latitude: 40.782865,
-        longitude: -73.965354
-      },
-      radius: 20,
-      inputBinding: {
-        locationNameInput: $('[name=end_location]'),
-        latitudeInput: $("[name=end_lat]"),
-        longitudeInput: $("[name=end_lon]")
-      },
-      enableAutocomplete: true,
-      onchanged: function (currentLocation, radius, isMarkerDropped) {
-        $("[name=end_lat]").val(currentLocation.latitude);
-        $("[name=end_lon]").val(currentLocation.longitude);
-      }
-    });
-  });
-    var Job = Backbone.View.extend({
+
+    var Jobs = Backbone.View.extend({
       el: '.page',
       render: function () {
         var template = _.template($("#job-template").html(), {} );
         this.$el.html(template);
+        startMapWithGeolocation( function (geolocation) {
+            $("#from_map").locationpicker({
+              location: geolocation
+              ,
+              radius: 20,
+              inputBinding: {
+                locationNameInput: $('[name=start_location]'),
+                latitudeInput: $("[name=start_lat]"),
+                longitudeInput: $("[name=start_lon]")
+              },
+              enableAutocomplete: true,
+              onchanged: function (currentLocation, radius, isMarkerDropped) {
+                $("[name=start_lat]").val(currentLocation.latitude);
+                $("[name=start_lon]").val(currentLocation.longitude);
+              }
+            });
+            $("#to_map").locationpicker({
+              location: {
+                latitude: 40.782865,
+                longitude: -73.965354
+              },
+              radius: 20,
+              inputBinding: {
+                locationNameInput: $('[name=end_location]'),
+                latitudeInput: $("[name=end_lat]"),
+                longitudeInput: $("[name=end_lon]")
+              },
+              enableAutocomplete: true,
+              onchanged: function (currentLocation, radius, isMarkerDropped) {
+                $("[name=end_lat]").val(currentLocation.latitude);
+                $("[name=end_lon]").val(currentLocation.longitude);
+              }
+            });
+          });
       },
       events: {
         "submit .create-job-form": "saveJob",
       },
       saveJob: function (ev) {
         var jobDetails = $(ev.currentTarget).serializeObject();
+        var job = new Job();
+        job.save(jobDetails, {
+          success: function (job) {
+            alert(job);
+          }
+        });
         return false;
       }
     });
@@ -150,7 +162,7 @@
         "": "home" }
     });
 
-    var job = new Job();
+    var job = new Jobs();
 
     var router = new Router();
     router.on("route:home", function () {
