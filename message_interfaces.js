@@ -40,6 +40,7 @@ var mailCallback = function (data, callback) {
 };
 
 var sendMessage = function ( data, cb ) {
+        console.log("in send messgae")
         if (data.msg) {
           var mailOptions = setUpMailOptions( data );
           transporter.sendMail( mailOptions,  mailCallback( data, cb ) );
