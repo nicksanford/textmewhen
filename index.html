@@ -18,8 +18,8 @@
   <form class="create-job-form" method="POST">
   <label class="control-label"for="email">Email</label>
   <input class="form-control"type="text" name="email">
-  <label class="control-label"for="price">Price</label>
-  <input class="form-control"type="text" name="price">
+  <label class="control-label"for="desired_price">Price</label>
+  <input class="form-control"type="text" name="desired_price">
 <!--start-->
   <label class="control-label" for="start_location">Start Location:</label>
   <input class="form-control" type="text" name="start_location">
@@ -48,10 +48,10 @@
     </div>
   </div>
 <!--end-->
-  <input type="hidden" name="start_lon">
-  <input type="hidden" name="start_lat">
-  <input type="hidden" name="end_lon">
-  <input type="hidden" name="end_lat">
+  <input type="hidden" name="start_longitude">
+  <input type="hidden" name="start_latitude">
+  <input type="hidden" name="end_longitude">
+  <input type="hidden" name="end_latitude">
   <hr>
   <button class="btn btn-lg btn-block btn-primary" type="submit">Submit</button>
 </form>
@@ -98,7 +98,7 @@
   }
   
     var Job = Backbone.Model.extend({
-      urlRoot: "/",
+      urlRoot: "/api/v1/uber",
       method: "POST"
     });
 
@@ -114,13 +114,13 @@
               radius: 20,
               inputBinding: {
                 locationNameInput: $('[name=start_location]'),
-                latitudeInput: $("[name=start_lat]"),
-                longitudeInput: $("[name=start_lon]")
+                latitudeInput: $("[name=start_latitude]"),
+                longitudeInput: $("[name=start_longitude]")
               },
               enableAutocomplete: true,
               onchanged: function (currentLocation, radius, isMarkerDropped) {
-                $("[name=start_lat]").val(currentLocation.latitude);
-                $("[name=start_lon]").val(currentLocation.longitude);
+                $("[name=start_latitude]").val(currentLocation.latitude);
+                $("[name=start_longitude]").val(currentLocation.longitude);
               }
             });
             $("#to_map").locationpicker({
@@ -131,13 +131,13 @@
               radius: 20,
               inputBinding: {
                 locationNameInput: $('[name=end_location]'),
-                latitudeInput: $("[name=end_lat]"),
-                longitudeInput: $("[name=end_lon]")
+                latitudeInput: $("[name=end_latitude]"),
+                longitudeInput: $("[name=end_longitude]")
               },
               enableAutocomplete: true,
               onchanged: function (currentLocation, radius, isMarkerDropped) {
-                $("[name=end_lat]").val(currentLocation.latitude);
-                $("[name=end_lon]").val(currentLocation.longitude);
+                $("[name=end_latitude]").val(currentLocation.latitude);
+                $("[name=end_longitude]").val(currentLocation.longitude);
               }
             });
           });

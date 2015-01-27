@@ -10,7 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "async": "^0.9.0",
+    "expect.js": "^0.3.1",
     "jayschema": "^0.3.1",
+    "mocha": "^2.1.0",
     "mongodb": "~2.0.0",
     "mongoose": "^3.8.21",
     "node": "0.0.0",
@@ -19,7 +21,8 @@
     "object-merge": "^2.5.1",
     "qs": "^2.3.3",
     "restify": "^2.8.4",
-    "schema": "^0.2.1"
+    "schema": "^0.2.1",
+    "superagent": "^0.21.0"
   },
   "repository": {
     "type": "git",

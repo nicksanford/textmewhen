@@ -1,7 +1,7 @@
 var logging = require('node-logging');
-var config = require("./config");
 var nodemailer = require('nodemailer');
 var objectMerge = require('object-merge');
+var config = require("./config");
 // mongo
 
 var transporter = nodemailer.createTransport({
@@ -19,7 +19,7 @@ var setUpMailOptions = function (data) {
       subject: 'Here is your info ✔', // Subject line
       text: data.msg(), // plaintext body
       html: '<b>' + data.msg() + ' ✔</b>' // html body
-  }
+  };
 };
 
 var mailCallback = function (data, callback) {
@@ -40,14 +40,14 @@ var mailCallback = function (data, callback) {
 };
 
 var sendMessage = function ( data, cb ) {
-        console.log("in send messgae")
+        logging.inf("in send message");
         if (data.msg) {
           var mailOptions = setUpMailOptions( data );
           transporter.sendMail( mailOptions,  mailCallback( data, cb ) );
         }
         else {
-          cb(null, data)
+          cb(null, data);
         }
-}
+};
 
 module.exports = sendMessage;
