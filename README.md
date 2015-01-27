@@ -1,49 +1,47 @@
 TEXT ME WHEN
 ============
 
-NEEDED FOR GETTING IT UP ON GITHUB
-----------------------------------
-
-BUSINESS LOGIC / NEW FEATURES
+BUSINESS LOGIC / UPCOMING FEATURES
 -----------------------------
   * Maybe I should notify the user if the price will never be low enough (look deeper
       into how surge pricing works)
-  * Replace the email system with a texting system
+  * Add optional texting notification system
+  * Currently the app keeps track of the job state:
+    ```javascript
+    ["started", "request_error", "success", "timeout", "uber_api_limit_error"]
+    ```
+    and the mail state:
+    ```javascript
+    ["email_error", "email_sent" ]
+    ```
+  * When the server starts up it should restart all jobs that have a state
+    of request_error, uber_api_limit_error started and/or an email_state of
+    email_error.  This is because these jobs have failed for whatever reason and
+    then need to be resent.
 
-UI
---
-  * How will I do the UI?
-  * All I need from the UI is the json object that I send to the backend
-  * (Android + iOS) + WebApp
+DATASTORE
+--------
+  * The API uses MongoDB as the datastore and mongoose as the ORM
+
+FRONTEND
+--------
+  * The API doesn't care about the frontend (like a good API).
+  * Currently the frontend is implemented in Backbone but iOS / Android apps may be comming soon
+  * The Backbone app is able to make a request to the API at the moment but needs 
+    frontend validations + modal notification that the request has been (sent, failed, whatever)
 
 OPS
 ---
   * Bundle this bastard in Docker
   * Learn more about systemd
 
-DATASTORE
---------
-  * NOTE: Your app is going to be killed often so you should be able to deal with
-      the app dying at any point and not interupt the user experience
-  * There should be some kind of datastore (in ad different container) that will
-      keep track of active jobs, completed jobs, and failed jobs.
-  * What are you going to store (mongo &&|| redis)?
-
-WEBSERVER / LOADBALANCER
------------------------
-  * This must be deployed with SSL and a load balancer (probably nginx unless there
-      is a good reason not to use it as both the reverse proxy and load balancer)
-  * Why would I not just use nginx as both the reverse proxy and load balancer?
-  * Q: How would this scale? Maybe look up HAProxy?
-  * A: It looks like the Uber will limit the # of requests I can do before
-      node even gets the chance to get overloaded.
-
 JSON objects + urls of interest
 -------------------------------
   ```javascript
-    url = "https://api.uber.com/v1/estimates/price";
+    uber_api_url = "https://api.uber.com/v1/estimates/price";
+    testmewhen_api_url = "https://textmewhen.com/api/v1/uber";
 
     uber_parameters = { "server_token": "SOMESERVERTOKEN", "start_latitude": "30.26463", "start_longitude": "-97.74403", "end_latitude": "30.31944", "end_longitude": "-97.71897"};
 
-    textmewhen_api_parameters = {"start_lat":"30.26463","start_lon":"-97.74403","end_lat":"30.31944","end_lon":"-97.71897","end_time":"2014-12-14T18:37:55.347Z","email":"someguy@gmail.com","price":"15.00"}
+    textmewhen_api_parameters = {"start_latitude":"30.26463","start_longitude":"-97.74403","end_latitude":"30.31944","end_longitude":"-97.71897","email":"someguy@gmail.com","desired_price":"15.00"}
   ```
