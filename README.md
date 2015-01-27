@@ -7,11 +7,11 @@ BUSINESS LOGIC / UPCOMING FEATURES
       into how surge pricing works)
   * Add optional texting notification system
   * Currently the app keeps track of the job state:
-    ```javascript
+    ```
     ["started", "request_error", "success", "timeout", "uber_api_limit_error"]
     ```
     and the mail state:
-    ```javascript
+    ```
     ["email_error", "email_sent" ]
     ```
   * When the server starts up it should restart all jobs that have a state
