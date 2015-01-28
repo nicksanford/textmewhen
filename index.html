@@ -9,6 +9,7 @@
  <div class="container">
    <h1 class="text-center">Textmewhen</h1>
    <hr>
+   <div id="flash-message"></div>
    <div class="page"></div>
  </div>
 
@@ -149,8 +150,18 @@
         var jobDetails = $(ev.currentTarget).serializeObject();
         var job = new Job();
         job.save(jobDetails, {
-          success: function (job) {
-            alert(job);
+          success: function (model, response) {
+            $(ev.currentTarget).find("button[type=submit]").removeClass("btn-primary").addClass("btn-success").addClass("disabled").html("Refresh to make another request")
+            $("#flash-message").html("<div class='alert alert-success alert-dismissible fade in' role='alert'><button type='button' class='close fade in' data-dismiss='alert'><span aria-hidden='true'>&times;</span><span class='sr-only'>Close</span></button><h4 class='text-center'>Your request has been sent. You will get an email within the next two hours.</h4><div id='success'></div></div>");
+            $('html,body').animate({ scrollTop: 0 }, "fast");
+            console.log(model);
+            console.log(response);
+          },
+          error: function (model, response) {
+            $("#flash-message").html("<div class='alert alert-danger alert-dismissible fade in' role='alert'><button type='button' class='close fade in' data-dismiss='alert'><span aria-hidden='true'>&times;</span><span class='sr-only'>Close</span></button><h4 class='text-center'>Textmewhen is under heavy load at this time. Please try again later.</h4><div id='danger'></div></div>");
+            $('html,body').animate({ scrollTop: 0 }, "fast");
+            console.log(model);
+            console.log(response);
           }
         });
         return false;

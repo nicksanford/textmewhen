@@ -13,7 +13,7 @@ var setUpWorkerDataAndCreateWorker = function (req, res) {
       res.send(new restify.UnprocessableEntityError(JSON.stringify(err.errors)));
       logging.err(JSON.stringify(err.errors));
     } else {
-      res.send(201);
+      res.send(201, {});
       workers.createWorker(job.toObject());
     }
   });
