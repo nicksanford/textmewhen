@@ -3,7 +3,6 @@ var logging = require('node-logging');
 var workers = require("./workers");
 var models = workers.models;
 var config = require("./config");
-
 var apiServer = restify.createServer({name: "textmewhen"});
 
 var setUpWorkerDataAndCreateWorker = function (req, res) {

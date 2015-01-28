@@ -17,9 +17,9 @@
 
   <form class="create-job-form" method="POST">
   <label class="control-label"for="email">Email</label>
-  <input class="form-control"type="text" name="email">
+  <input class="form-control" name="email" type="email" required placeholder="Enter a valid email address">
   <label class="control-label"for="desired_price">Price</label>
-  <input class="form-control"type="text" name="desired_price">
+  <input class="form-control" type="number" min="0" max="1000" name="desired_price" required placeholder="Enter the max price you want to pay for your ride">
 <!--start-->
   <label class="control-label" for="start_location">Start Location:</label>
   <input class="form-control" type="text" name="start_location">
