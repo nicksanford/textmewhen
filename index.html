@@ -8,7 +8,6 @@
 <body>
  <div class="container">
    <h1 class="text-center">Textmewhen</h1>
-   <hr>
    <div id="flash-message"></div>
    <div class="page"></div>
  </div>
@@ -16,7 +15,7 @@
  <script type="text/template" id="job-template">
 
 
-  <form class="create-job-form" method="POST">
+  <form class="create-job-form  form-group-lg" method="POST">
   <label class="control-label"for="email">Email</label>
   <input class="form-control" name="email" type="email" required placeholder="Enter a valid email address">
   <label class="control-label"for="desired_price">Price</label>
@@ -53,10 +52,8 @@
   <input type="hidden" name="start_latitude">
   <input type="hidden" name="end_longitude">
   <input type="hidden" name="end_latitude">
-  <hr>
   <button class="btn btn-lg btn-block btn-primary" type="submit">Submit</button>
 </form>
-<hr>
  </script>
 
  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> 
@@ -97,7 +94,7 @@
         callback({ latitude: 40.782865, longitude: -73.965354 });
     }
   }
-  
+
     var Job = Backbone.Model.extend({
       urlRoot: "/api/v1/uber",
       method: "POST"
