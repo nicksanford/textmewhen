@@ -1,185 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title></title>
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css"></script>
-</head>
-<body>
- <div class="container">
-   <h1 class="text-center">Textmewhen</h1>
-   <div id="flash-message"></div>
-   <div class="page"></div>
- </div>
+  <head>
+    <meta charset="UTF-8">
+    <title>Textmewhen</title>
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css"></script>
+     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> 
+     <script src="js/locationpicker.jquery.js"></script>
+     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+     <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
+     <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+     <script type="text/javascript" src='http://maps.google.com/maps/api/js?sensor=false&libraries=places'></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center">Textmewhen</h1>
+      <div id="flash-message"></div>
+      <div class="page"></div>
+    </div>
 
- <script type="text/template" id="job-template">
+   <script type="text/template" id="job-template">
+    <div class="row">
+      <div class="col-xs-12">
+        <form class="create-job-form form-horizontal" method="POST">
+          <div class="row">
+            <div class="col-xs-12">
+              <label class="control-label"for="email">Email</label>
+              <input class="form-control" name="email" type="email" required placeholder="Enter a valid email address">
+            </div>
+            <div class="col-xs-12">
+              <label class="control-label"for="desired_price">Price</label>
+              <input class="form-control" type="number" min="0" max="1000" name="desired_price" required placeholder="Enter the max price you want to pay for your ride">
+            </div>
+          <!--start-->
+            <div class="col-xs-12">
+              <label class="control-label" for="start_location">Start Location:</label>
+              <input class="form-control" type="text" name="start_location">
+            </div>
+            <div class="col-xs-12">
+              <div class="panel panel-primary">
+                <div class="panel-heading">
+                  <div class="panel-title">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-1" aria-expanded="true">Pickup Location Map</a>
+                  </div>
+                </div>
+                <div class="panel-collapse collapse in" id="collapse-1" aria-expanded="true">
+                  <div class="panel-body" id="from_map" style="width: 100%; height: 300px;" ></div>
+                </div>
+              </div>
+            </div>
+          <!--end-->
 
-
-  <form class="create-job-form  form-group-lg" method="POST">
-  <label class="control-label"for="email">Email</label>
-  <input class="form-control" name="email" type="email" required placeholder="Enter a valid email address">
-  <label class="control-label"for="desired_price">Price</label>
-  <input class="form-control" type="number" min="0" max="1000" name="desired_price" required placeholder="Enter the max price you want to pay for your ride">
-<!--start-->
-  <label class="control-label" for="start_location">Start Location:</label>
-  <input class="form-control" type="text" name="start_location">
-  <div class="panel panel-primary">
-    <div class="panel-heading">
-      <div class="panel-title">
-        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-1" aria-expanded="true">Pickup Location Map</a>
+          <!--start-->
+            <div class="col-xs-12">
+              <label class="control-label" for="end_location">End Location:</label>
+              <input class="form-control" type="text" name="end_location">
+            </div>
+            <div class="col-xs-12">
+              <div class="panel panel-primary">
+                <div class="panel-heading">
+                  <div  class="panel-title"> <a id="open_me" class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-2" aria-expanded="false">Destination Map</a>
+                  </div>
+                </div>
+                <div class="panel-collapse collapse in" id="collapse-2" aria-expanded="false">
+                  <div class="panel-body" id="to_map" style="width: 100%; height: 300px;"></div>
+                </div>
+              </div>
+            </div>
+          <!--end-->
+            <input type="hidden" name="start_longitude">
+            <input type="hidden" name="start_latitude">
+            <input type="hidden" name="end_longitude">
+            <input type="hidden" name="end_latitude">
+            <div class="col-xs-12">
+              <button class="btn btn-lg btn-block btn-primary" type="submit">Submit</button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
-    <div class="panel-collapse collapse in" id="collapse-1" aria-expanded="true">
-      <div class="panel-body" id="from_map" style="width: 100%; height: 300px;" ></div>
-    </div>
-  </div>
-<!--end-->
+   </script>
 
-<!--start-->
-  <label class="control-label" for="end_location">End Location:</label>
-  <input class="form-control" type="text" name="end_location">
-  <div class="panel panel-primary">
-    <div class="panel-heading">
-      <div  class="panel-title"> <a id="open_me" class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-2" aria-expanded="false">Destination Map</a>
-      </div>
-    </div>
-    <div class="panel-collapse collapse in" id="collapse-2" aria-expanded="false">
-      <div class="panel-body" id="to_map" style="width: 100%; height: 300px;"></div>
-    </div>
-  </div>
-<!--end-->
-  <input type="hidden" name="start_longitude">
-  <input type="hidden" name="start_latitude">
-  <input type="hidden" name="end_longitude">
-  <input type="hidden" name="end_latitude">
-  <button class="btn btn-lg btn-block btn-primary" type="submit">Submit</button>
-</form>
- </script>
 
- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script> 
- <script src="js/locationpicker.jquery.js"></script>
- <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
- <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
- <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
- <script type="text/javascript" src='http://maps.google.com/maps/api/js?sensor=false&libraries=places'></script>
 
- <script type="text/javascript">
-  (function ($) {
+   <script type="text/javascript">
+    (function ($) {
 
-  $.fn.serializeObject = function()
-  {
-      var o = {};
-      var a = this.serializeArray();
-      $.each(a, function() {
-          if (o[this.name] !== undefined) {
-              if (!o[this.name].push) {
-                  o[this.name] = [o[this.name]];
-              }
-              o[this.name].push(this.value || '');
-          } else {
-              o[this.name] = this.value || '';
-          }
-      });
-      return o;
-  };
-
-  startMapWithGeolocation = function (callback) {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function (position) {
-        callback({ latitude: position.coords.latitude, longitude: position.coords.longitude });
-      }, function () {
-        callback({ latitude: 40.782865, longitude: -73.965354 });
-      });
-    } else {
-        callback({ latitude: 40.782865, longitude: -73.965354 });
-    }
-  }
-
-    var Job = Backbone.Model.extend({
-      urlRoot: "/api/v1/uber",
-      method: "POST"
-    });
-
-    var Jobs = Backbone.View.extend({
-      el: '.page',
-      render: function () {
-        var template = _.template($("#job-template").html(), {} );
-        this.$el.html(template);
-        startMapWithGeolocation( function (geolocation) {
-            $("#from_map").locationpicker({
-              location: geolocation
-              ,
-              radius: 20,
-              inputBinding: {
-                locationNameInput: $('[name=start_location]'),
-                latitudeInput: $("[name=start_latitude]"),
-                longitudeInput: $("[name=start_longitude]")
-              },
-              enableAutocomplete: true,
-              onchanged: function (currentLocation, radius, isMarkerDropped) {
-                $("[name=start_latitude]").val(currentLocation.latitude);
-                $("[name=start_longitude]").val(currentLocation.longitude);
-              }
-            });
-            $("#to_map").locationpicker({
-              location: {
-                latitude: 40.782865,
-                longitude: -73.965354
-              },
-              radius: 20,
-              inputBinding: {
-                locationNameInput: $('[name=end_location]'),
-                latitudeInput: $("[name=end_latitude]"),
-                longitudeInput: $("[name=end_longitude]")
-              },
-              enableAutocomplete: true,
-              onchanged: function (currentLocation, radius, isMarkerDropped) {
-                $("[name=end_latitude]").val(currentLocation.latitude);
-                $("[name=end_longitude]").val(currentLocation.longitude);
-              }
-            });
-          });
-      },
-      events: {
-        "submit .create-job-form": "saveJob",
-      },
-      saveJob: function (ev) {
-        var jobDetails = $(ev.currentTarget).serializeObject();
-        var job = new Job();
-        job.save(jobDetails, {
-          success: function (model, response) {
-            $(ev.currentTarget).find("button[type=submit]").removeClass("btn-primary").addClass("btn-success").addClass("disabled").html("Refresh to make another request")
-            $("#flash-message").html("<div class='alert alert-success alert-dismissible fade in' role='alert'><button type='button' class='close fade in' data-dismiss='alert'><span aria-hidden='true'>&times;</span><span class='sr-only'>Close</span></button><h4 class='text-center'>Your request has been sent. You will get an email within the next two hours.</h4><div id='success'></div></div>");
-            $('html,body').animate({ scrollTop: 0 }, "fast");
-            console.log(model);
-            console.log(response);
-          },
-          error: function (model, response) {
-            $("#flash-message").html("<div class='alert alert-danger alert-dismissible fade in' role='alert'><button type='button' class='close fade in' data-dismiss='alert'><span aria-hidden='true'>&times;</span><span class='sr-only'>Close</span></button><h4 class='text-center'>Textmewhen is under heavy load at this time. Please try again later.</h4><div id='danger'></div></div>");
-            $('html,body').animate({ scrollTop: 0 }, "fast");
-            console.log(model);
-            console.log(response);
-          }
+    $.fn.serializeObject = function()
+    {
+        var o = {};
+        var a = this.serializeArray();
+        $.each(a, function() {
+            if (o[this.name] !== undefined) {
+                if (!o[this.name].push) {
+                    o[this.name] = [o[this.name]];
+                }
+                o[this.name].push(this.value || '');
+            } else {
+                o[this.name] = this.value || '';
+            }
         });
-        return false;
+        return o;
+    };
+
+    startMapWithGeolocation = function (callback) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+          callback({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+        }, function () {
+          callback({ latitude: 40.782865, longitude: -73.965354 });
+        });
+      } else {
+          callback({ latitude: 40.782865, longitude: -73.965354 });
       }
-    });
+    }
 
-    var Router = Backbone.Router.extend({
-      routes: {
-        "": "home" }
-    });
+      var Job = Backbone.Model.extend({
+        urlRoot: "/api/v1/uber",
+        method: "POST"
+      });
 
-    var job = new Jobs();
+      var Jobs = Backbone.View.extend({
+        el: '.page',
+        render: function () {
+          var template = _.template($("#job-template").html(), {} );
+          this.$el.html(template);
+          startMapWithGeolocation( function (geolocation) {
+              $("#from_map").locationpicker({
+                location: geolocation
+                ,
+                radius: 20,
+                inputBinding: {
+                  locationNameInput: $('[name=start_location]'),
+                  latitudeInput: $("[name=start_latitude]"),
+                  longitudeInput: $("[name=start_longitude]")
+                },
+                enableAutocomplete: true,
+                onchanged: function (currentLocation, radius, isMarkerDropped) {
+                  $("[name=start_latitude]").val(currentLocation.latitude);
+                  $("[name=start_longitude]").val(currentLocation.longitude);
+                }
+              });
+              $("#to_map").locationpicker({
+                location: {
+                  latitude: 40.782865,
+                  longitude: -73.965354
+                },
+                radius: 20,
+                inputBinding: {
+                  locationNameInput: $('[name=end_location]'),
+                  latitudeInput: $("[name=end_latitude]"),
+                  longitudeInput: $("[name=end_longitude]")
+                },
+                enableAutocomplete: true,
+                onchanged: function (currentLocation, radius, isMarkerDropped) {
+                  $("[name=end_latitude]").val(currentLocation.latitude);
+                  $("[name=end_longitude]").val(currentLocation.longitude);
+                }
+              });
+            });
+        },
+        events: {
+          "submit .create-job-form": "saveJob",
+        },
+        saveJob: function (ev) {
+          var jobDetails = $(ev.currentTarget).serializeObject();
+          var job = new Job();
+          job.save(jobDetails, {
+            success: function (model, response) {
+              $(ev.currentTarget).find("button[type=submit]").removeClass("btn-primary").addClass("btn-success").addClass("disabled").html("Refresh to make another request")
+              $("#flash-message").html("<div class='alert alert-success alert-dismissible fade in' role='alert'><button type='button' class='close fade in' data-dismiss='alert'><span aria-hidden='true'>&times;</span><span class='sr-only'>Close</span></button><h4 class='text-center'>Your request has been sent. You will get an email within the next two hours.</h4><div id='success'></div></div>");
+              $('html,body').animate({ scrollTop: 0 }, "fast");
+              console.log(model);
+              console.log(response);
+            },
+            error: function (model, response) {
+              $("#flash-message").html("<div class='alert alert-danger alert-dismissible fade in' role='alert'><button type='button' class='close fade in' data-dismiss='alert'><span aria-hidden='true'>&times;</span><span class='sr-only'>Close</span></button><h4 class='text-center'>Textmewhen is under heavy load at this time. Please try again later.</h4><div id='danger'></div></div>");
+              $('html,body').animate({ scrollTop: 0 }, "fast");
+              console.log(model);
+              console.log(response);
+            }
+          });
+          return false;
+        }
+      });
 
-    var router = new Router();
-    router.on("route:home", function () {
-      job.render();
-    });
+      var Router = Backbone.Router.extend({
+        routes: {
+          "": "home" }
+      });
 
-    Backbone.history.start();
+      var job = new Jobs();
 
-  })(jQuery);
- </script>
-</body>
+      var router = new Router();
+      router.on("route:home", function () {
+        job.render();
+      });
+
+      Backbone.history.start();
+
+    })(jQuery);
+   </script>
+  </body>
 </html>
